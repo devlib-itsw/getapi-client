@@ -1,0 +1,6 @@
+getapi-proxy
+getapi-proxy.exe
+getapi-proxy.log
+dist/
+internal/
+.getapi-log/
