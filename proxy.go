@@ -98,6 +98,7 @@ var httpClient = &http.Client{
 		MaxIdleConns:        100,
 		MaxIdleConnsPerHost: 10,
 		IdleConnTimeout:     90 * time.Second,
+		DisableCompression:  true,
 	},
 }
 
