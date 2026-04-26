@@ -372,15 +372,14 @@ func availablePort(preferred int) string {
 func requireAdmin() {
 	switch runtime.GOOS {
 	case "windows":
-		// 관리자 권한 확인: hosts 파일 쓰기 시도
 		f, err := os.OpenFile(hostsPath(), os.O_WRONLY, 0644)
 		if err != nil {
-			log.Fatal("관리자 권한으로 실행해주세요. (우클릭 → 관리자로 실행)")
+			exitWithError("관리자 권한으로 실행해주세요. (우클릭 → 관리자로 실행)")
 		}
 		f.Close()
 	default:
 		if os.Geteuid() != 0 {
-			log.Fatal("root 권한이 필요합니다. (sudo ./getapi-proxy)")
+			exitWithError("root 권한이 필요합니다. (sudo ./getapi-proxy)")
 		}
 	}
 }
@@ -436,6 +435,13 @@ func proxy(w http.ResponseWriter, req *http.Request, sc *SafeConfig) {
 
 // ─── main ────────────────────────────────────────────
 
+func exitWithError(format string, args ...any) {
+	fmt.Printf("\n[!] "+format+"\n", args...)
+	fmt.Print("\n계속하려면 Enter를 누르세요...")
+	fmt.Scanln()
+	os.Exit(1)
+}
+
 func main() {
 	requireAdmin()
 
@@ -447,7 +453,12 @@ func main() {
 
 	sc := &SafeConfig{}
 	if err := deviceFlow(sc); err != nil {
-		log.Fatalf("Device Flow 실패: %v", err)
+		exitWithError("Device Flow 실패: %v", err)
+	}
+
+	cfg := sc.Get()
+	if cfg.SecretKey == "" {
+		exitWithError("SecretKey가 설정되지 않았습니다. 서버에서 SecretKey를 발급받아 설정해주세요.")
 	}
 
 	  if sc.Get().SecretKey == "" {
@@ -468,7 +479,9 @@ func main() {
 
 	port := availablePort(80)
 	fmt.Printf("Running on http://%s%s\n", LocalDomain, port)
-	log.Fatal(http.ListenAndServe(port, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	if err := http.ListenAndServe(port, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		proxy(w, r, sc)
-	})))
+	})); err != nil {
+		exitWithError("서버 실행 실패: %v", err)
+	}
 }
