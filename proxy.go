@@ -461,10 +461,6 @@ func main() {
 		exitWithError("SecretKey가 설정되지 않았습니다. 서버에서 SecretKey를 발급받아 설정해주세요.")
 	}
 
-	  if sc.Get().SecretKey == "" {
-		  fatalPause("시크릿 키가 설정되지 않았습니다.")
-	  } 
-
 	checkAndRenew(sc)
 	startMidnightChecker(sc)
 	addHost()
