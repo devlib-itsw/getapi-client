@@ -450,6 +450,10 @@ func main() {
 		log.Fatalf("Device Flow 실패: %v", err)
 	}
 
+	  if sc.Get().SecretKey == "" {
+		  fatalPause("시크릿 키가 설정되지 않았습니다.")
+	  } 
+
 	checkAndRenew(sc)
 	startMidnightChecker(sc)
 	addHost()
