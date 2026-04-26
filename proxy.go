@@ -276,6 +276,8 @@ func deviceFlow(sc *SafeConfig) error {
 			return nil
 		case "expired":
 			return fmt.Errorf("device code 만료")
+		case "error":
+			exitWithError("SecretKey가 설정되지 않았습니다. 서버에서 SecretKey를 발급받아 설정해주세요.")
 		default:
 			return fmt.Errorf("알 수 없는 상태: %s", poll.Status)
 		}
