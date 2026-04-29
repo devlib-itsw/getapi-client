@@ -108,12 +108,22 @@ var httpClient = &http.Client{
 var logger *log.Logger
 
 func setupLogger(reader *bufio.Reader) {
-	fmt.Print("로깅 사용? (y/n): ")
-	answer, _ := reader.ReadString('\n')
-	if strings.TrimSpace(strings.ToLower(answer)) != "y" {
-		logger = log.New(io.Discard, "", 0)
-		return
+	var answer string
+	for {
+		fmt.Print("로깅 사용? (y/n): ")
+		raw, _ := reader.ReadString('\n')
+		answer = strings.TrimSpace(raw)
+		switch strings.ToLower(answer) {
+		case "y", "yes":
+			goto logging
+		case "n", "no":
+			logger = log.New(io.Discard, "", 0)
+			return
+		default:
+			fmt.Println("y 또는 n을 입력해주세요.")
+		}
 	}
+logging:
 
 	fmt.Print("로그 경로 (엔터: .getapi-log/): ")
 	dir, _ := reader.ReadString('\n')
