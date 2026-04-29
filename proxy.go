@@ -28,7 +28,7 @@ import (
 const LocalDomain = "getapi"
 
 var (
-	baseURL = "http://getapi.lol"
+	baseURL = "https://getapi.lol"
 	authURL = baseURL + "/auth/api-key"
 )
 
