@@ -389,6 +389,13 @@ func requireAdmin() {
 
 // ─── 프록시 핸들러 ────────────────────────────────────
 
+// HTTP/1.1 hop-by-hop 헤더 — 프록시가 양방향으로 제거해야 함
+var hopByHopHeaders = []string{
+	"Connection", "Keep-Alive", "Transfer-Encoding",
+	"Upgrade", "TE", "Trailers",
+	"Proxy-Authorization", "Proxy-Authenticate",
+}
+
 func proxy(w http.ResponseWriter, req *http.Request, sc *SafeConfig) {
 	targetURL := baseURL + "/lib" + req.URL.Path
 	if req.URL.RawQuery != "" {
@@ -412,6 +419,13 @@ func proxy(w http.ResponseWriter, req *http.Request, sc *SafeConfig) {
 			proxyReq.Header.Add(k, v)
 		}
 	}
+	// Accept-Encoding 제거: upstream이 압축 응답을 보내지 않도록 강제.
+	// 이 헤더를 그대로 전달하면 upstream이 gzip/br로 응답하는데,
+	// DisableCompression:true 이므로 Go가 자동 해제하지 않아 바디가 깨짐.
+	proxyReq.Header.Del("Accept-Encoding")
+	for _, h := range hopByHopHeaders {
+		proxyReq.Header.Del(h)
+	}
 	proxyReq.Header.Set("X-GetAPI-Key", cfg.APIKey)
 	proxyReq.Header.Set("X-GetAPI-Timestamp", ts)
 	proxyReq.Header.Set("X-GetAPI-Signature", sign(cfg.SecretKey, body, ts))
@@ -431,6 +445,9 @@ func proxy(w http.ResponseWriter, req *http.Request, sc *SafeConfig) {
 		for _, v := range vs {
 			w.Header().Add(k, v)
 		}
+	}
+	for _, h := range hopByHopHeaders {
+		w.Header().Del(h)
 	}
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
