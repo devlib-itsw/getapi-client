@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -449,8 +450,22 @@ func proxy(w http.ResponseWriter, req *http.Request, sc *SafeConfig) {
 	for _, h := range hopByHopHeaders {
 		w.Header().Del(h)
 	}
+
+	// 서버가 Accept-Encoding 무시하고 gzip을 보낸 경우 프록시에서 직접 해제.
+	// Content-Encoding을 제거해야 클라이언트가 이중 해제를 시도하지 않음.
+	respBody := io.Reader(resp.Body)
+	if strings.EqualFold(resp.Header.Get("Content-Encoding"), "gzip") {
+		gr, err := gzip.NewReader(resp.Body)
+		if err == nil {
+			defer gr.Close()
+			respBody = gr
+			w.Header().Del("Content-Encoding")
+			w.Header().Del("Content-Length")
+		}
+	}
+
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	io.Copy(w, respBody)
 }
 
 // ─── main ────────────────────────────────────────────
