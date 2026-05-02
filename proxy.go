@@ -408,6 +408,20 @@ var hopByHopHeaders = []string{
 }
 
 func proxy(w http.ResponseWriter, req *http.Request, sc *SafeConfig) {
+	origin := req.Header.Get("Origin")
+	if origin == "" {
+		origin = "*"
+	}
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	if req.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	targetURL := baseURL + "/lib" + req.URL.Path
 	if req.URL.RawQuery != "" {
 		targetURL += "?" + req.URL.RawQuery
